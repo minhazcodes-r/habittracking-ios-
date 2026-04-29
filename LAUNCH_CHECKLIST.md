@@ -10,13 +10,13 @@ This repo is a **Swift Package** with an iOS SwiftUI executable target.
 
 ## 2) Configure Supabase key
 
-`HabitTrackingIOS/Services/Config.swift` now reads `SUPABASE_ANON_KEY` from the app process environment first.
+`HabitTrackingIOS/Services/Config.swift` now reads `SUPABASE_ANON_KEY` (or `SUPABASE_KEY`) from the app process environment first.
 
 In Xcode:
 1. Open `Package.swift` in Xcode.
 2. Select the `HabitTrackingIOS` run scheme.
 3. **Edit Scheme** → **Run** → **Arguments** → **Environment Variables**.
-4. Add: `SUPABASE_ANON_KEY=<your real anon key>`.
+4. Add: `SUPABASE_ANON_KEY=<your real anon key>` (or `SUPABASE_KEY`).
 
 ## 3) Resolve dependencies
 

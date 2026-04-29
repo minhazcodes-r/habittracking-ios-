@@ -4,14 +4,17 @@ enum Config {
     static let supabaseURL = "https://hmcmvewsvaxujpruruhh.supabase.co"
 
     static let supabaseAnonKey: String = {
-        if let key = ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"]?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-           !key.isEmpty {
-            return key
+        let env = ProcessInfo.processInfo.environment
+        let candidates = ["SUPABASE_ANON_KEY", "SUPABASE_KEY"]
+
+        for keyName in candidates {
+            if let value = env[keyName]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
+                return value
+            }
         }
 
         #if DEBUG
-        assertionFailure("SUPABASE_ANON_KEY is not set. Add it in the run scheme environment variables.")
+        print("⚠️ Supabase anon key is not configured. Set SUPABASE_ANON_KEY in your scheme environment variables.")
         #endif
 
         return "YOUR_ANON_KEY_HERE"
