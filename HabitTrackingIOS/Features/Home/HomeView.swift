@@ -20,6 +20,11 @@ struct HomeView: View {
                     if habitsStore.isLoading {
                         Text("Loading...").foregroundColor(.mutedForeground)
                             .frame(maxWidth: .infinity).padding(.top, 40)
+                    } else if let error = habitsStore.lastError {
+                        Text(error)
+                            .foregroundColor(.destructive)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 16)
                     } else if habitsStore.habits.isEmpty {
                         Text("No habits yet. Create one!")
                             .foregroundColor(.mutedForeground)

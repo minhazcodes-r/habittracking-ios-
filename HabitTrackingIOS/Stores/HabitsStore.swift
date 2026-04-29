@@ -5,6 +5,7 @@ import Supabase
 class HabitsStore: ObservableObject {
     @Published var habits: [HabitWithProgress] = []
     @Published var isLoading = true
+    @Published var lastError: String?
 
     private var userId: String?
 
@@ -37,7 +38,7 @@ class HabitsStore: ObservableObject {
                 HabitWithProgress(habit: h, current: logMap[h.id] ?? 0)
             }
         } catch {
-            print("fetchHabits error: \(error)")
+            lastError = error.localizedDescription
         }
         self.isLoading = false
     }
@@ -59,7 +60,9 @@ class HabitsStore: ObservableObject {
         do {
             try await supabase.from("habits").insert(insert).execute()
             await fetchHabits(userId: userId)
-        } catch { print("createHabit error: \(error)") }
+        } catch {
+            lastError = error.localizedDescription
+        }
     }
 
     func updateHabit(id: String, updates: [String: AnyJSON]) {
@@ -77,7 +80,11 @@ class HabitsStore: ObservableObject {
             habits[idx].habit = h
         }
         Task {
-            try? await supabase.from("habits").update(updates).eq("id", value: id).execute()
+            do {
+                try await supabase.from("habits").update(updates).eq("id", value: id).execute()
+            } catch {
+                await MainActor.run { self.lastError = error.localizedDescription }
+            }
         }
     }
 
@@ -91,20 +98,32 @@ class HabitsStore: ObservableObject {
         }
         let log = LogUpsert(habit_id: habitId, user_id: userId, date: today, value: value)
         Task {
-            try? await supabase.from("habit_logs").upsert(log, onConflict: "habit_id,date").execute()
+            do {
+                try await supabase.from("habit_logs").upsert(log, onConflict: "habit_id,user_id,date").execute()
+            } catch {
+                await MainActor.run { self.lastError = error.localizedDescription }
+            }
         }
     }
 
     func archiveHabit(id: String) async {
         habits.removeAll { $0.id == id }
-        try? await supabase.from("habits").update(["archived": AnyJSON.bool(true)]).eq("id", value: id).execute()
+        do {
+            try await supabase.from("habits").update(["archived": AnyJSON.bool(true)]).eq("id", value: id).execute()
+        } catch {
+            lastError = error.localizedDescription
+        }
     }
 
     func reorderHabits(_ reordered: [HabitWithProgress]) {
         habits = reordered
         for (i, h) in reordered.enumerated() {
             Task {
-                try? await supabase.from("habits").update(["position": AnyJSON.integer(i)]).eq("id", value: h.id).execute()
+                do {
+                    try await supabase.from("habits").update(["position": AnyJSON.integer(i)]).eq("id", value: h.id).execute()
+                } catch {
+                    await MainActor.run { self.lastError = error.localizedDescription }
+                }
             }
         }
     }

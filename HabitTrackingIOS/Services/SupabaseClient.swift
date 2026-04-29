@@ -1,7 +1,11 @@
 import Foundation
 import Supabase
 
-let supabase = SupabaseClient(
-    supabaseURL: URL(string: Config.supabaseURL)!,
-    supabaseKey: Config.supabaseAnonKey
-)
+private let supabaseURL: URL = {
+    guard let url = URL(string: Config.supabaseURL) else {
+        preconditionFailure("Invalid SUPABASE_URL value: \(Config.supabaseURL)")
+    }
+    return url
+}()
+
+let supabase = SupabaseClient(supabaseURL: supabaseURL, supabaseKey: Config.supabaseAnonKey)
