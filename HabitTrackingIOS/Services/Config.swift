@@ -3,20 +3,20 @@ import Foundation
 enum Config {
     static let supabaseURL = "https://hmcmvewsvaxujpruruhh.supabase.co"
 
-    static let supabaseAnonKey: String = {
-        let env = ProcessInfo.processInfo.environment
-        let candidates = ["SUPABASE_ANON_KEY", "SUPABASE_KEY"]
+    // Merge-conflict-safe approach:
+    // - Keep the original placeholder fallback.
+    // - Prefer runtime env values when provided by the scheme.
+    static let supabaseAnonKey = resolvedSupabaseAnonKey()
 
-        for keyName in candidates {
-            if let value = env[keyName]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
+    private static func resolvedSupabaseAnonKey() -> String {
+        let env = ProcessInfo.processInfo.environment
+
+        for candidate in ["SUPABASE_ANON_KEY", "SUPABASE_KEY"] {
+            if let value = env[candidate]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
                 return value
             }
         }
 
-        #if DEBUG
-        print("⚠️ Supabase anon key is not configured. Set SUPABASE_ANON_KEY in your scheme environment variables.")
-        #endif
-
         return "YOUR_ANON_KEY_HERE"
-    }()
+    }
 }
