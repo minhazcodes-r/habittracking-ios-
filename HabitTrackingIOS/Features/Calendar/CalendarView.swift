@@ -125,6 +125,7 @@ struct CalendarScreenView: View {
         }
         .task { await fetchLogs() }
         .onChange(of: viewMonth) { _ in Task { await fetchLogs() } }
+        .onChange(of: viewYear) { _ in Task { await fetchLogs() } }
     }
 
     private func prevMonth() {

@@ -6,12 +6,19 @@ class AuthStore: ObservableObject {
     @Published var user: User?
     @Published var isLoading = true
     @Published var isAuthenticated = false
+    @Published var configurationError: String?
 
     init() {
         Task { await bootstrap() }
     }
 
     func bootstrap() async {
+        guard Config.hasValidSupabaseKey else {
+            configurationError = "Missing SUPABASE_ANON_KEY. Set it in the app environment before logging in."
+            isLoading = false
+            return
+        }
+
         do {
             let session = try await supabase.auth.session
             self.user = session.user

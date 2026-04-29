@@ -18,6 +18,9 @@ struct SignupView: View {
                     }.padding(.top, 60)
 
                     VStack(spacing: 16) {
+                        if let configError = authStore.configurationError {
+                            Text(configError).font(.caption2).foregroundColor(.destructive)
+                        }
                         if !error.isEmpty {
                             Text(error).font(.caption2).foregroundColor(.destructive)
                         }

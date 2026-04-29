@@ -17,6 +17,9 @@ struct LoginView: View {
                     }.padding(.top, 60)
 
                     VStack(spacing: 16) {
+                        if let configError = authStore.configurationError {
+                            Text(configError).font(.caption2).foregroundColor(.destructive)
+                        }
                         if !error.isEmpty {
                             Text(error).font(.caption2).foregroundColor(.destructive)
                         }
@@ -71,6 +74,8 @@ struct InputField: View {
             Group {
                 if isSecure {
                     SecureField(placeholder, text: $text)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                 } else {
                     TextField(placeholder, text: $text)
                         .textInputAutocapitalization(.never)
