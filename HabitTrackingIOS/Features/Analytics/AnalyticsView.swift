@@ -108,8 +108,7 @@ struct AnalyticsView: View {
                 weekly.append(scores.isEmpty ? 0 : scores.reduce(0, +) / Double(scores.count))
             }
             weeklyData = weekly
-            let nonZero = weekly.filter { $0 > 0 }
-            avgCompletion = nonZero.isEmpty ? 0 : nonZero.reduce(0, +) / Double(nonZero.count)
+            avgCompletion = weekly.reduce(0, +) / Double(weekly.count)
         } catch {}
     }
 }
