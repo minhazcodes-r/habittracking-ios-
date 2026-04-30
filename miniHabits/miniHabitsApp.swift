@@ -6,12 +6,21 @@
 //
 
 import SwiftUI
+import Supabase
 
 @main
 struct miniHabitsApp: App {
+    @StateObject private var authStore = AuthStore()
+    @StateObject private var habitsStore = HabitsStore()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppRootView()
+                .environmentObject(authStore)
+                .environmentObject(habitsStore)
+                .onOpenURL { url in
+                    Task { try? await supabase.auth.session(from: url) }
+                }
         }
     }
 }

@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Xcode — per-user state (preferences, breakpoints, etc.)
+xcuserdata/
+*.xcuserstate
+*.moved-aside
+
+# Xcode build output
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Swift Package Manager local checkout
+.build/
+.swiftpm/
+
+# Session / scratch
+.claude-status.md
+.claude/
+
+# Env files (do not commit secrets)
+.env
+.env.*
+!.env.example
