@@ -9,7 +9,7 @@ iOS habit tracker. SwiftUI + Supabase backend.
 - **Deployment target:** iOS 26.4
 - **Backend:** Supabase. URL is hardcoded in `miniHabits/Services/Config.swift`; anon key has an env override.
 - **Auth:** Supabase email/password works. Google OAuth is the active in-progress feature (see Active task).
-- **Git remote:** `git@github.com:MinhazCodes-R/HabitTracking-IOS-.git`
+- **Git remote:** `git@github.com:MinhazCodes-R/HabitTracking-IOS-.git`. Default branch is `main`. Heads up: in past sessions `local main` accidentally tracked `origin/claude/relaunch-and-oauth` — verify with `git rev-parse --abbrev-ref '@{u}'` before pushing.
 
 ## Build & test commands
 
@@ -86,6 +86,42 @@ The "Continue with Google" button in `miniHabits/Features/Auth/LoginView.swift:4
 - `miniHabits/ContentView.swift` — leftover Xcode template, now unused. Confirm before deleting.
 - `Features/Profile/ProfileView.swift:115` — unused `try?` result (warning).
 - `Features/Profile/ProfileView.swift:93` — deprecated `Text + Text` concatenation (iOS 26.0 warning).
+
+## Agentic dev flow (set up 2026-05-03)
+
+This repo has a Claude Code agentic flow scaffolded under `.claude/` (gitignored — local only). Read this before reinventing it.
+
+### Subagents (`.claude/agents/`)
+- `ios-architect` — produces a tight implementation plan for non-trivial features (files to touch, data flow, open questions). No code.
+- `swift-implementer` — executes a plan or a clear ask: edits Swift, runs `xcodebuild`, fixes errors, reports back. Will not redesign or pull in dependencies without asking.
+- `ios-reviewer` — reads `git diff` and surfaces blockers / should-fix / nits. Read-only.
+- `ios-builder` — runs a clean build and returns only the `error:` lines (cheap way to verify compile).
+
+### Slash commands (`.claude/commands/`)
+- `/resume` — re-orient on active task + queued work + git state. Read-only.
+- `/spec <feature>` — invokes `ios-architect` to draft a plan.
+- `/ship <feature-or-plan>` — chains `swift-implementer` → `ios-builder` → `ios-reviewer`. Stops on the first failure. Does not commit or push.
+- `/build` — quick green/red via `ios-builder`.
+
+### Memory: claude-mem
+Globally enabled (`~/.claude/plugins/marketplaces/thedotmack/`). Worker runs on `127.0.0.1:37701`. Captures observations from each session, injects relevant context into future ones (starts on the *second* session in a project). Live viewer: `http://127.0.0.1:37701`.
+
+If the worker isn't running: `PATH="$HOME/.bun/bin:$PATH" bunx claude-mem start`.
+
+### Parallel agents: claude-squad
+Installed as `cs` (and `claude-squad`). Each session runs in its own git worktree. Best for "queue 4 unrelated tasks before bed, review worktrees in the morning." Requires `gh auth login` for the push-to-GitHub keybinding (`s`).
+
+### Honest note on "fully autonomous" mode
+
+There is no autonomous loop wired up here, deliberately. Reasons:
+1. Most queued work on this project is **blocked on user input** (Supabase Google config, Apple Developer signing, asset PNG, App Group entitlement). An agent can't unblock those.
+2. The only autonomously-actionable items right now are the small cleanups (delete `ContentView.swift`, fix two `ProfileView.swift` warnings) — not enough to justify a runaway loop.
+3. `/loop`-driven autonomous Claude on Opus runs up real bills with no human course-correction.
+
+If a future session genuinely needs autonomous batch execution, the cleanest path is `claude-squad` with explicit task descriptions per worktree, **not** an unbounded `/loop`.
+
+### Native-build gotcha (resolved)
+`npx claude-mem install` fails on Node 24/25 due to C++20 concept errors when compiling tree-sitter against macOS libc++. Workaround used: install via Node 22 (`brew install node@22`, run install with `PATH="/opt/homebrew/opt/node@22/bin:$PATH" npx claude-mem install`). Runtime worker uses `bun`, not node, so day-to-day operation doesn't care which node is on PATH.
 
 ## Environment quirks
 
