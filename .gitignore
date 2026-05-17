@@ -22,6 +22,9 @@ DerivedData/
 .claude-status.md
 .claude/
 
+# Agent automation runtime logs (the scripts themselves are tracked)
+automation/logs/
+
 # Env files (do not commit secrets)
 .env
 .env.*
