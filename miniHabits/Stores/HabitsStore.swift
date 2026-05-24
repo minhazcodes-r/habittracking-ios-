@@ -89,15 +89,16 @@ class HabitsStore: ObservableObject {
         }
     }
 
-    func logProgress(habitId: String, value: Double) {
+    func logProgress(habitId: String, value: Double, date: String? = nil) {
         guard let userId else { return }
-        if let idx = habits.firstIndex(where: { $0.id == habitId }) {
+        let targetDate = date ?? today
+        if targetDate == today, let idx = habits.firstIndex(where: { $0.id == habitId }) {
             habits[idx].current = value
         }
         struct LogUpsert: Encodable {
             let habit_id: String; let user_id: String; let date: String; let value: Double
         }
-        let log = LogUpsert(habit_id: habitId, user_id: userId, date: today, value: value)
+        let log = LogUpsert(habit_id: habitId, user_id: userId, date: targetDate, value: value)
         Task {
             do {
                 try await supabase.from("habit_logs").upsert(log, onConflict: "habit_id,user_id,date").execute()

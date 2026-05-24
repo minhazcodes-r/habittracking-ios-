@@ -100,20 +100,19 @@ struct CalendarScreenView: View {
                     if let day = selectedDay {
                         let dateStr = String(format: "%04d-%02d-%02d", viewYear, viewMonth, day)
                         let logs = dayLogs[dateStr] ?? [:]
+                        let isFuture = isFutureDay(day)
                         VStack(alignment: .leading, spacing: 12) {
                             Text("\(monthNames[viewMonth]) \(day), \(String(viewYear))")
                                 .font(.bodyMedium).foregroundColor(.white)
+                            if isFuture {
+                                Text("Future date — log when the day arrives")
+                                    .font(.caption2).foregroundColor(.mutedForeground)
+                            }
                             if filteredHabits.isEmpty {
                                 Text("No habits in this category").foregroundColor(.mutedForeground)
                             } else {
                                 ForEach(filteredHabits) { h in
-                                    let ul = displayUnit(h.habit.metricType, h.habit.unit)
-                                    HStack {
-                                        Text(h.habit.name).foregroundColor(.mutedForeground)
-                                        Spacer()
-                                        Text("\(Int(logs[h.id] ?? 0)) / \(Int(h.habit.goal))\(ul.isEmpty ? "" : " \(ul)")")
-                                            .foregroundColor(.white)
-                                    }
+                                    dayHabitRow(h, current: logs[h.id] ?? 0, dateStr: dateStr, disabled: isFuture)
                                 }
                             }
                         }
@@ -126,6 +125,80 @@ struct CalendarScreenView: View {
         .task { await fetchLogs() }
         .onChange(of: viewMonth) { _ in Task { await fetchLogs() } }
         .onChange(of: viewYear) { _ in Task { await fetchLogs() } }
+    }
+
+    @ViewBuilder
+    private func dayHabitRow(_ h: HabitWithProgress, current: Double, dateStr: String, disabled: Bool) -> some View {
+        let ul = displayUnit(h.habit.metricType, h.habit.unit)
+        let isBoolean = h.habit.metricType == "boolean"
+        let isDone = current >= h.habit.goal
+        let increment = h.habit.increments.first ?? 10
+
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(h.habit.name).foregroundColor(.mutedForeground)
+                Spacer()
+                Text("\(Int(current)) / \(Int(h.habit.goal))\(ul.isEmpty ? "" : " \(ul)")")
+                    .foregroundColor(.white)
+            }
+            if !disabled {
+                HStack(spacing: 8) {
+                    Button {
+                        setDayLog(habitId: h.id, dateStr: dateStr, value: isDone ? 0 : h.habit.goal)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill").font(.caption)
+                            Text(isDone ? "Done" : "Complete").font(.caption2).fontWeight(.medium)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 8)
+                        .background(isDone ? Color.green.opacity(0.2) : Color.secondaryBg)
+                        .foregroundColor(isDone ? .green : .white)
+                        .cornerRadius(10)
+                    }
+                    if !isBoolean {
+                        Button {
+                            let newVal = min(current + increment, h.habit.goal)
+                            setDayLog(habitId: h.id, dateStr: dateStr, value: newVal)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus").font(.caption)
+                                Text("+\(Int(increment))\(ul.isEmpty ? "" : " \(ul)")")
+                                    .font(.caption2).fontWeight(.medium)
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 8)
+                            .background(Color.secondaryBg).foregroundColor(.white)
+                            .cornerRadius(10)
+                        }
+                        if current > 0 {
+                            Button {
+                                setDayLog(habitId: h.id, dateStr: dateStr, value: 0)
+                            } label: {
+                                Image(systemName: "arrow.counterclockwise").font(.caption)
+                                    .frame(width: 36, height: 32)
+                                    .background(Color.secondaryBg).foregroundColor(.mutedForeground)
+                                    .cornerRadius(10)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func setDayLog(habitId: String, dateStr: String, value: Double) {
+        dayLogs[dateStr, default: [:]][habitId] = value
+        habitsStore.logProgress(habitId: habitId, value: value, date: dateStr)
+    }
+
+    private func isFutureDay(_ day: Int) -> Bool {
+        let now = Date()
+        let nowY = Calendar.current.component(.year, from: now)
+        let nowM = Calendar.current.component(.month, from: now)
+        let nowD = Calendar.current.component(.day, from: now)
+        if viewYear != nowY { return viewYear > nowY }
+        if viewMonth != nowM { return viewMonth > nowM }
+        return day > nowD
     }
 
     private func prevMonth() {
